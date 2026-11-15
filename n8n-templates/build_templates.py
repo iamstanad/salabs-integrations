@@ -1,3 +1,4 @@
+# ruff: noqa: E501  (long template strings are clearer unwrapped)
 """Generates the ready-made n8n templates (JSON files you import into n8n).
 
 Run: python3 integrations/n8n-templates/build_templates.py
@@ -48,7 +49,7 @@ class WF:
         )
 
     def chain(self, *names):
-        for a, b in zip(names, names[1:]):
+        for a, b in zip(names, names[1:], strict=False):
             self.link(a, b)
 
     def note(self, text, pos, w=420, h=260):
@@ -163,7 +164,9 @@ def t1():
     wf.chain(form, tr, post, done)
     wf.note(
         "# Video → blog post\nUpload a video/podcast in the form. S.A Labs transcribes it "
-        "(20 credits/min), then the AI writes a blog post.\n\n" + SETUP + GEMINI_SETUP
+        "(20 credits/min), then the AI writes a blog post.\n\n"
+        + SETUP
+        + GEMINI_SETUP
         + "4. Click **Test workflow**, upload a file, wait for the post.",
         [-40, -60],
         560,
@@ -199,7 +202,12 @@ def t2():
             "options": {},
         },
     )
-    split = wf.add("One item per URL", "n8n-nodes-base.splitOut", 1.1, {"fieldToSplitOut": "url", "options": {}})
+    split = wf.add(
+        "One item per URL",
+        "n8n-nodes-base.splitOut",
+        1.1,
+        {"fieldToSplitOut": "url", "options": {}},
+    )
     scrape = wf.add(
         "Scrape page",
         SA,
@@ -226,10 +234,30 @@ def t2():
         {
             "assignments": {
                 "assignments": [
-                    {"id": nid("r1"), "name": "URL", "type": "string", "value": "={{ $('Scrape page').item.json.metadata.url }}"},
-                    {"id": nid("r2"), "name": "Title", "type": "string", "value": "={{ $('Scrape page').item.json.metadata.title }}"},
-                    {"id": nid("r3"), "name": "Summary", "type": "string", "value": "={{ $json.text }}"},
-                    {"id": nid("r4"), "name": "Scraped at", "type": "string", "value": "={{ $now.toISO() }}"},
+                    {
+                        "id": nid("r1"),
+                        "name": "URL",
+                        "type": "string",
+                        "value": "={{ $('Scrape page').item.json.metadata.url }}",
+                    },
+                    {
+                        "id": nid("r2"),
+                        "name": "Title",
+                        "type": "string",
+                        "value": "={{ $('Scrape page').item.json.metadata.title }}",
+                    },
+                    {
+                        "id": nid("r3"),
+                        "name": "Summary",
+                        "type": "string",
+                        "value": "={{ $json.text }}",
+                    },
+                    {
+                        "id": nid("r4"),
+                        "name": "Scraped at",
+                        "type": "string",
+                        "value": "={{ $now.toISO() }}",
+                    },
                 ]
             },
             "options": {},
@@ -243,7 +271,12 @@ def t2():
             "operation": "append",
             "documentId": {"__rl": True, "mode": "url", "value": ""},
             "sheetName": {"__rl": True, "mode": "name", "value": "Sheet1"},
-            "columns": {"mappingMode": "autoMapInputData", "value": {}, "matchingColumns": [], "schema": []},
+            "columns": {
+                "mappingMode": "autoMapInputData",
+                "value": {},
+                "matchingColumns": [],
+                "schema": [],
+            },
             "options": {},
         },
     )
@@ -251,7 +284,8 @@ def t2():
     wf.note(
         "# URLs → summaries → Google Sheet\nPut your URLs in **URLs to scrape**. Each page is "
         "scraped to Markdown (10 credits/page), summarised by AI, and added as a row.\n\n"
-        + SETUP + GEMINI_SETUP
+        + SETUP
+        + GEMINI_SETUP
         + "4. Make a Google Sheet with headers **URL, Title, Summary, Scraped at** and paste its link "
         "into **Add to Google Sheet**.",
         [-40, -60],
@@ -267,7 +301,16 @@ def t2():
 # ---- 3. Text → voiceover --------------------------------------------------------------
 
 
-VOICES = ["af_heart", "am_michael", "bf_emma", "bm_george", "af_bella", "am_adam", "ef_dora", "ff_siwis"]
+VOICES = [
+    "af_heart",
+    "am_michael",
+    "bf_emma",
+    "bm_george",
+    "af_bella",
+    "am_adam",
+    "ef_dora",
+    "ff_siwis",
+]
 
 
 def t3():
@@ -281,7 +324,12 @@ def t3():
             "formDescription": "Paste your script, pick a voice, get an MP3.",
             "formFields": {
                 "values": [
-                    {"fieldLabel": "Script", "fieldName": "script", "fieldType": "textarea", "requiredField": True},
+                    {
+                        "fieldLabel": "Script",
+                        "fieldName": "script",
+                        "fieldType": "textarea",
+                        "requiredField": True,
+                    },
                     {
                         "fieldLabel": "Voice",
                         "fieldName": "voice",
@@ -293,7 +341,9 @@ def t3():
                         "fieldLabel": "Speed",
                         "fieldName": "speed",
                         "fieldType": "dropdown",
-                        "fieldOptions": {"values": [{"option": s} for s in ["1.0", "1.1", "1.2", "0.9"]]},
+                        "fieldOptions": {
+                            "values": [{"option": s} for s in ["1.0", "1.1", "1.2", "0.9"]]
+                        },
                     },
                 ]
             },
@@ -312,7 +362,11 @@ def t3():
             "voice": "={{ $json.voice }}",
             "speechOutput": "binary",
             "binaryPropertyOutput": "data",
-            "speechOptions": {"format": "mp3", "speed": "={{ Number($json.speed || 1) }}", "fileName": "voiceover.mp3"},
+            "speechOptions": {
+                "format": "mp3",
+                "speed": "={{ Number($json.speed || 1) }}",
+                "fileName": "voiceover.mp3",
+            },
         },
     )
     done = wf.add(
@@ -331,7 +385,8 @@ def t3():
     wf.chain(form, speak, done)
     wf.note(
         "# Script → voiceover\nPaste a script in the form and download a natural-sounding MP3 "
-        "(80 credits per 1,000 characters, about $0.008).\n\n" + SETUP
+        "(80 credits per 1,000 characters, about $0.008).\n\n"
+        + SETUP
         + "3. Click **Test workflow** and fill in the form.\n\nVoices: af_ = US female, am_ = US male, "
         "bf_/bm_ = UK, ef_ = Spanish, ff_ = French. See all with the *List Voices* operation.",
         [-40, -60],
@@ -380,7 +435,12 @@ def t4():
             "inputDataFieldName": "srt",
             "name": "={{ $('Latest episode').item.json.title }}.srt",
             "driveId": {"__rl": True, "mode": "list", "value": "My Drive"},
-            "folderId": {"__rl": True, "mode": "list", "value": "root", "cachedResultName": "/ (Root folder)"},
+            "folderId": {
+                "__rl": True,
+                "mode": "list",
+                "value": "root",
+                "cachedResultName": "/ (Root folder)",
+            },
             "options": {},
         },
     )
@@ -454,12 +514,23 @@ def t5():
             "options": {},
         },
     )
-    split = wf.add("One item per page", "n8n-nodes-base.splitOut", 1.1, {"fieldToSplitOut": "url", "options": {}})
+    split = wf.add(
+        "One item per page",
+        "n8n-nodes-base.splitOut",
+        1.1,
+        {"fieldToSplitOut": "url", "options": {}},
+    )
     scrape = wf.add(
         "Scrape page",
         SA,
         1,
-        {"resource": "web", "operation": "scrape", "url": "={{ $json.url }}", "formats": ["markdown"], "scrapeOptions": {}},
+        {
+            "resource": "web",
+            "operation": "scrape",
+            "url": "={{ $json.url }}",
+            "formats": ["markdown"],
+            "scrapeOptions": {},
+        },
     )
     cmp_ = wf.add("Find changes", "n8n-nodes-base.code", 2, {"jsCode": COMPARE})
     summ = llm(
@@ -486,7 +557,8 @@ def t5():
     wf.note(
         "# Competitor monitor\nEvery morning, scrapes the pages you list (10 credits/page), "
         "compares them with yesterday, and emails an AI summary only when something changed.\n\n"
-        + SETUP + GEMINI_SETUP
+        + SETUP
+        + GEMINI_SETUP
         + "4. Put the pages in **Pages to watch**, your address in **Email me**, connect Gmail.\n"
         "5. **Activate** the workflow (the first run just saves a copy of each page).",
         [-40, -60],
@@ -569,7 +641,9 @@ def t6():
         wf.link(name, agent, "ai_tool")
     wf.note(
         "# AI agent with S.A Labs tools\nChat with an agent that can read any web page, "
-        "make audio and transcribe media links, all through S.A Labs.\n\n" + SETUP + GEMINI_SETUP
+        "make audio and transcribe media links, all through S.A Labs.\n\n"
+        + SETUP
+        + GEMINI_SETUP
         + "4. Click **Open chat** and try: *“Read https://example.com and give me a 30-second "
         "audio summary.”*",
         [-40, -60],
