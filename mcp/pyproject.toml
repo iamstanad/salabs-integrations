@@ -12,6 +12,10 @@ dependencies = [
     "mcp>=1.10",
 ]
 
+[project.urls]
+Homepage = "https://github.com/iamstanad/salabs-integrations"
+Issues = "https://github.com/iamstanad/salabs-integrations/issues"
+
 [project.scripts]
 salabs-mcp = "salabs_mcp.server:main"
 

@@ -49,5 +49,13 @@
   },
   "peerDependencies": {
     "n8n-workflow": "*"
+  },
+  "homepage": "https://github.com/iamstanad/salabs-integrations#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamstanad/salabs-integrations.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iamstanad/salabs-integrations/issues"
   }
 }
