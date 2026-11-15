@@ -1,0 +1,276 @@
+{
+  "name": "S.A Labs: Scrape a list of URLs → AI summary → Google Sheets",
+  "nodes": [
+    {
+      "id": "f8340d06-d559-533a-9e96-e32146c2f232",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "2265a936-bee0-5ed1-962f-85469ec7369b",
+      "name": "URLs to scrape",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d63ea0ad-9563-55a0-8202-e921e15523dd",
+              "name": "url",
+              "type": "array",
+              "value": "[\"https://example.com\", \"https://www.iana.org/help/example-domains\"]"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d474a178-2ecc-5dd5-96cf-8734d007f6c4",
+      "name": "One item per URL",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "fieldToSplitOut": "url",
+        "options": {}
+      }
+    },
+    {
+      "id": "447e3ebe-fdfa-57c3-a3fd-fac7e9a2bf25",
+      "name": "Scrape page",
+      "type": "n8n-nodes-salabs.saLabs",
+      "typeVersion": 1,
+      "position": [
+        780,
+        300
+      ],
+      "parameters": {
+        "resource": "web",
+        "operation": "scrape",
+        "url": "={{ $json.url }}",
+        "formats": [
+          "markdown"
+        ],
+        "scrapeOptions": {
+          "onlyMainContent": true
+        }
+      }
+    },
+    {
+      "id": "fcccaa99-5a0c-509f-bea7-6fbde7a44940",
+      "name": "Summarise",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1040,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Summarise this web page in 3 short bullet points for a busy reader. Plain text, no intro.\n\nTitle: {{ $json.metadata.title }}\n\n{{ $json.markdown.slice(0, 20000) }}",
+        "batching": {}
+      }
+    },
+    {
+      "id": "602d1a56-99ab-5c8c-82d6-778b6bb01e77",
+      "name": "Gemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        520
+      ],
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      }
+    },
+    {
+      "id": "4049aa55-5aac-5816-bfde-deef6f5dfad9",
+      "name": "Make the row",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1300,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "44f3bc1c-a7de-52bb-847f-454f752a2bdd",
+              "name": "URL",
+              "type": "string",
+              "value": "={{ $('Scrape page').item.json.metadata.url }}"
+            },
+            {
+              "id": "b29e20cb-9cf2-5346-b22d-d00d061c1393",
+              "name": "Title",
+              "type": "string",
+              "value": "={{ $('Scrape page').item.json.metadata.title }}"
+            },
+            {
+              "id": "4332b5c9-5aae-56f3-96f9-200121165894",
+              "name": "Summary",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "id": "f7568fca-a16e-503e-bec7-25d66ece7adb",
+              "name": "Scraped at",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b98a8982-5d2b-551d-b4fa-38e8c3aa77f1",
+      "name": "Add to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1560,
+        300
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ed64157c-323f-5070-aa28-9c35efce2999",
+      "name": "Note 8",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -60
+      ],
+      "parameters": {
+        "content": "# URLs → summaries → Google Sheet\nPut your URLs in **URLs to scrape**. Each page is scraped to Markdown (10 credits/page), summarised by AI, and added as a row.\n\n## Setup (2 minutes)\n1. Install the **S.A Labs** node: Settings → Community nodes → `n8n-nodes-salabs`.\n2. Open each **S.A Labs** node → Credential → *Create new* → paste your API key from the S.A Labs dashboard.\n3. The AI step uses **Google Gemini** (free API key from aistudio.google.com). You can swap it for OpenAI, Claude or any other chat model.\n4. Make a Google Sheet with headers **URL, Title, Summary, Scraped at** and paste its link into **Add to Google Sheet**.",
+        "width": 560,
+        "height": 340
+      }
+    }
+  ],
+  "connections": {
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarise",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "URLs to scrape",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "URLs to scrape": {
+      "main": [
+        [
+          {
+            "node": "One item per URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One item per URL": {
+      "main": [
+        [
+          {
+            "node": "Scrape page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape page": {
+      "main": [
+        [
+          {
+            "node": "Summarise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarise": {
+      "main": [
+        [
+          {
+            "node": "Make the row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make the row": {
+      "main": [
+        [
+          {
+            "node": "Add to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Scrape a list of web pages to Markdown, summarise each with AI and save them to Google Sheets."
+  }
+}

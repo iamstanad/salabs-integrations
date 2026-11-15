@@ -1,0 +1,52 @@
+{
+  "name": "n8n-nodes-salabs",
+  "version": "0.1.0",
+  "description": "S.A Labs for n8n: scrape web pages to Markdown, text-to-speech and audio/video transcription with subtitles. Cheap, simple, works as an AI Agent tool.",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "scraping",
+    "web scraper",
+    "markdown",
+    "text-to-speech",
+    "tts",
+    "transcription",
+    "whisper",
+    "subtitles",
+    "srt",
+    "ai agent"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "S.A Labs"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.js",
+    "dev": "tsc --watch",
+    "lint": "eslint nodes credentials"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/SALabsApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/SALabs/SALabs.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@n8n/eslint-plugin-community-nodes": "^0.40.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.29.0",
+    "n8n-workflow": "^2.16.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.72.2"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

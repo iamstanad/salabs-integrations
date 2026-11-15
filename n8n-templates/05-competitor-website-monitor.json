@@ -1,0 +1,242 @@
+{
+  "name": "S.A Labs: Competitor website monitor → daily summary email",
+  "nodes": [
+    {
+      "id": "99336473-490a-5d83-992d-1c31b26963e5",
+      "name": "Every morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8239956c-0d68-5719-802e-7dcdb9e63c08",
+      "name": "Pages to watch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "090cf86f-af46-56b2-a3e8-e0b3c4916328",
+              "name": "url",
+              "type": "array",
+              "value": "[\"https://example.com\", \"https://www.iana.org/help/example-domains\"]"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "282f50ce-eb6d-5428-81af-1de9f44515cd",
+      "name": "One item per page",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "fieldToSplitOut": "url",
+        "options": {}
+      }
+    },
+    {
+      "id": "e9cee2cd-f8db-5c60-bf5c-3f9494d70a45",
+      "name": "Scrape page",
+      "type": "n8n-nodes-salabs.saLabs",
+      "typeVersion": 1,
+      "position": [
+        780,
+        300
+      ],
+      "parameters": {
+        "resource": "web",
+        "operation": "scrape",
+        "url": "={{ $json.url }}",
+        "formats": [
+          "markdown"
+        ],
+        "scrapeOptions": {}
+      }
+    },
+    {
+      "id": "5119d0c4-6bcc-5412-b257-18fef42bc293",
+      "name": "Find changes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Compares each page with the copy saved last time and outputs ONE item\n// describing what changed (or nothing, which stops the workflow).\n// Note: saved copies persist only when the workflow is *active* (not in test runs).\nconst store = $getWorkflowStaticData('global');\nstore.pages = store.pages || {};\nconst changes = [];\nfor (const item of $input.all()) {\n  const url = item.json.metadata.url;\n  const now = (item.json.markdown || '').slice(0, 15000);\n  const before = store.pages[url];\n  if (before === undefined) {\n    changes.push(`### ${url}\\n(First check: now watching this page.)\\n\\n${now.slice(0, 1500)}`);\n  } else if (before !== now) {\n    changes.push(`### ${url}\\nBEFORE:\\n${before.slice(0, 4000)}\\n\\nNOW:\\n${now.slice(0, 4000)}`);\n  }\n  store.pages[url] = now;\n}\nif (changes.length === 0) return [];\nreturn [{ json: { changedPages: changes.length, changes: changes.join('\\n\\n---\\n\\n') } }];\n"
+      }
+    },
+    {
+      "id": "f6a93f38-e8fe-5ad3-b339-213bf45618b3",
+      "name": "Summarise changes",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1300,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You monitor competitor websites. In a short email body (HTML, a few bullet points per site), explain what changed and why it might matter: prices, offers, products, messaging.\n\n{{ $json.changes }}",
+        "batching": {}
+      }
+    },
+    {
+      "id": "5df68631-30e3-550f-9656-6cc4e37738f1",
+      "name": "Gemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1300,
+        520
+      ],
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      }
+    },
+    {
+      "id": "e9727a8c-6566-5cbb-97a9-718ff672828a",
+      "name": "Email me",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1560,
+        300
+      ],
+      "parameters": {
+        "sendTo": "you@example.com",
+        "subject": "={{ 'Competitor watch: ' + $('Find changes').item.json.changedPages + ' page(s) changed' }}",
+        "emailType": "html",
+        "message": "={{ $json.text }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "071cd53f-582e-5759-87d2-b2edac079dc5",
+      "name": "Note 8",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -60
+      ],
+      "parameters": {
+        "content": "# Competitor monitor\nEvery morning, scrapes the pages you list (10 credits/page), compares them with yesterday, and emails an AI summary only when something changed.\n\n## Setup (2 minutes)\n1. Install the **S.A Labs** node: Settings → Community nodes → `n8n-nodes-salabs`.\n2. Open each **S.A Labs** node → Credential → *Create new* → paste your API key from the S.A Labs dashboard.\n3. The AI step uses **Google Gemini** (free API key from aistudio.google.com). You can swap it for OpenAI, Claude or any other chat model.\n4. Put the pages in **Pages to watch**, your address in **Email me**, connect Gmail.\n5. **Activate** the workflow (the first run just saves a copy of each page).",
+        "width": 580,
+        "height": 340
+      }
+    }
+  ],
+  "connections": {
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarise changes",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every morning": {
+      "main": [
+        [
+          {
+            "node": "Pages to watch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pages to watch": {
+      "main": [
+        [
+          {
+            "node": "One item per page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One item per page": {
+      "main": [
+        [
+          {
+            "node": "Scrape page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape page": {
+      "main": [
+        [
+          {
+            "node": "Find changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find changes": {
+      "main": [
+        [
+          {
+            "node": "Summarise changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarise changes": {
+      "main": [
+        [
+          {
+            "node": "Email me",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Scrape competitor pages daily, detect changes and email an AI summary."
+  }
+}

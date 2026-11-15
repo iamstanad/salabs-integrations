@@ -1,0 +1,175 @@
+{
+  "name": "S.A Labs: Script → voiceover for Reels, TikTok and YouTube",
+  "nodes": [
+    {
+      "id": "46732059-7adb-5491-8a55-4f79a2800954",
+      "name": "Voiceover form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "formTitle": "Make a voiceover",
+        "formDescription": "Paste your script, pick a voice, get an MP3.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Script",
+              "fieldName": "script",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Voice",
+              "fieldName": "voice",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "af_heart"
+                  },
+                  {
+                    "option": "am_michael"
+                  },
+                  {
+                    "option": "bf_emma"
+                  },
+                  {
+                    "option": "bm_george"
+                  },
+                  {
+                    "option": "af_bella"
+                  },
+                  {
+                    "option": "am_adam"
+                  },
+                  {
+                    "option": "ef_dora"
+                  },
+                  {
+                    "option": "ff_siwis"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Speed",
+              "fieldName": "speed",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "1.0"
+                  },
+                  {
+                    "option": "1.1"
+                  },
+                  {
+                    "option": "1.2"
+                  },
+                  {
+                    "option": "0.9"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "edf1d607-44a1-5ad7-9c62-eb429e0faa88"
+    },
+    {
+      "id": "a649de34-f3ac-54b6-8117-208f6d17c7f3",
+      "name": "Generate voiceover",
+      "type": "n8n-nodes-salabs.saLabs",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "resource": "speech",
+        "operation": "generate",
+        "text": "={{ $json.script }}",
+        "voice": "={{ $json.voice }}",
+        "speechOutput": "binary",
+        "binaryPropertyOutput": "data",
+        "speechOptions": {
+          "format": "mp3",
+          "speed": "={{ Number($json.speed || 1) }}",
+          "fileName": "voiceover.mp3"
+        }
+      }
+    },
+    {
+      "id": "fa3c5fd9-9135-530b-ad2b-bfa4c075082a",
+      "name": "Download the MP3",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "returnBinary",
+        "inputDataFieldName": "data",
+        "completionTitle": "Your voiceover is ready",
+        "completionMessage": "The download starts automatically.",
+        "options": {}
+      }
+    },
+    {
+      "id": "d347549e-1775-59b7-9b85-9dc17df469a9",
+      "name": "Note 3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -60
+      ],
+      "parameters": {
+        "content": "# Script → voiceover\nPaste a script in the form and download a natural-sounding MP3 (80 credits per 1,000 characters, about $0.008).\n\n## Setup (2 minutes)\n1. Install the **S.A Labs** node: Settings → Community nodes → `n8n-nodes-salabs`.\n2. Open each **S.A Labs** node → Credential → *Create new* → paste your API key from the S.A Labs dashboard.\n3. Click **Test workflow** and fill in the form.\n\nVoices: af_ = US female, am_ = US male, bf_/bm_ = UK, ef_ = Spanish, ff_ = French. See all with the *List Voices* operation.",
+        "width": 520,
+        "height": 320
+      }
+    }
+  ],
+  "connections": {
+    "Voiceover form": {
+      "main": [
+        [
+          {
+            "node": "Generate voiceover",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate voiceover": {
+      "main": [
+        [
+          {
+            "node": "Download the MP3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "A form that turns a script into an MP3 voiceover with S.A Labs text-to-speech."
+  }
+}

@@ -1,0 +1,38 @@
+[project]
+name = "salabs-mcp"
+version = "0.1.0"
+description = "MCP server for S.A Labs: web scraping, text-to-speech and transcription tools for Claude, Cursor and other AI apps"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "S.A Labs" }]
+keywords = ["mcp", "scraping", "text-to-speech", "transcription", "whisper", "ai-agents"]
+dependencies = [
+    "httpx>=0.27",
+    "mcp>=1.10",
+]
+
+[project.scripts]
+salabs-mcp = "salabs_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/salabs_mcp"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+line-length = 100
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+    "ruff>=0.17.5",
+]

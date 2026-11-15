@@ -1,0 +1,205 @@
+{
+  "name": "S.A Labs: AI research agent that can browse, speak and transcribe",
+  "nodes": [
+    {
+      "id": "c04f1711-c809-5ed9-a33a-48c1eb804940",
+      "name": "Chat",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "options": {}
+      },
+      "webhookId": "91fd2ffa-b18a-54ea-8602-0291e81801c5"
+    },
+    {
+      "id": "cf252160-2871-59f7-a8bd-c9d8f36bd472",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a helpful research assistant. Use the 'Read web page' tool to read any URL the user mentions or that you need, and cite the URL. Use 'Make audio' when the user asks for audio or a voiceover and give them the audio link. Use 'Transcribe media link' for direct links to audio/video files."
+        }
+      }
+    },
+    {
+      "id": "ab496b6c-9aab-5128-bd0a-2a8d8d11d108",
+      "name": "Gemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        300,
+        560
+      ],
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      }
+    },
+    {
+      "id": "1cd9a1c2-28c9-5a02-a804-bb3aab261520",
+      "name": "Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        460,
+        560
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "0022b449-752a-5dac-a881-14720a6fab69",
+      "name": "Read web page",
+      "type": "n8n-nodes-salabs.saLabsTool",
+      "typeVersion": 1,
+      "position": [
+        620,
+        560
+      ],
+      "parameters": {
+        "resource": "web",
+        "operation": "scrape",
+        "url": "={{ $fromAI('url', 'Full https address of the page to read', 'string') }}",
+        "formats": [
+          "markdown"
+        ],
+        "scrapeOptions": {}
+      }
+    },
+    {
+      "id": "bd0fabbb-2f13-53ec-967a-7df451989bc5",
+      "name": "Make audio",
+      "type": "n8n-nodes-salabs.saLabsTool",
+      "typeVersion": 1,
+      "position": [
+        800,
+        560
+      ],
+      "parameters": {
+        "resource": "speech",
+        "operation": "generate",
+        "text": "={{ $fromAI('text', 'The exact text to speak', 'string') }}",
+        "voice": "af_heart",
+        "speechOutput": "url",
+        "speechOptions": {}
+      }
+    },
+    {
+      "id": "be6b094f-2b6e-5a66-a5dc-59142913fa8f",
+      "name": "Transcribe media link",
+      "type": "n8n-nodes-salabs.saLabsTool",
+      "typeVersion": 1,
+      "position": [
+        980,
+        560
+      ],
+      "parameters": {
+        "resource": "transcription",
+        "operation": "transcribe",
+        "source": "url",
+        "mediaUrl": "={{ $fromAI('media_url', 'Direct link to an audio or video file', 'string') }}",
+        "model": "fast",
+        "transcribeOptions": {}
+      }
+    },
+    {
+      "id": "6d8d4a41-2293-5090-9340-f3a85340731e",
+      "name": "Note 7",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -60
+      ],
+      "parameters": {
+        "content": "# AI agent with S.A Labs tools\nChat with an agent that can read any web page, make audio and transcribe media links, all through S.A Labs.\n\n## Setup (2 minutes)\n1. Install the **S.A Labs** node: Settings → Community nodes → `n8n-nodes-salabs`.\n2. Open each **S.A Labs** node → Credential → *Create new* → paste your API key from the S.A Labs dashboard.\n3. The AI step uses **Google Gemini** (free API key from aistudio.google.com). You can swap it for OpenAI, Claude or any other chat model.\n4. Click **Open chat** and try: *“Read https://example.com and give me a 30-second audio summary.”*",
+        "width": 560,
+        "height": 320
+      }
+    }
+  ],
+  "connections": {
+    "Chat": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read web page": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make audio": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe media link": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "A chat AI agent that uses S.A Labs as tools to read web pages, make audio and transcribe media."
+  }
+}

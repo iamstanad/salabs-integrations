@@ -1,0 +1,170 @@
+{
+  "name": "S.A Labs: Video or audio → transcript → blog post",
+  "nodes": [
+    {
+      "id": "d9b2714a-a171-55d1-b695-af97325745d4",
+      "name": "Upload video or audio",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "formTitle": "Turn a video into a blog post",
+        "formDescription": "Upload a video or audio file. You'll get a ready-to-edit blog post.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Video or audio file",
+              "fieldName": "media",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".mp4,.mov,.mkv,.webm,.mp3,.wav,.m4a,.aac,.ogg",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target keyword (optional)",
+              "fieldName": "keyword",
+              "placeholder": "e.g. cinematic lighting tips"
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "2544d827-46f0-54d5-8c1e-727b095a7cb9"
+    },
+    {
+      "id": "20b9d7a0-6d30-50e4-8023-bf41e014e987",
+      "name": "Transcribe",
+      "type": "n8n-nodes-salabs.saLabs",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "resource": "transcription",
+        "operation": "transcribe",
+        "source": "binary",
+        "binaryPropertyName": "media",
+        "model": "accurate",
+        "transcribeOptions": {}
+      }
+    },
+    {
+      "id": "0004bf95-4577-5fce-9b49-662c09a666a0",
+      "name": "Write blog post",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write an engaging, well-structured blog post (Markdown, with a title, intro, H2 sections and a short conclusion) based on this transcript. Keep the speaker's ideas and voice; remove filler words.\n{{ $('Upload video or audio').item.json.keyword ? 'Target SEO keyword: ' + $('Upload video or audio').item.json.keyword : '' }}\n\nTranscript:\n{{ $json.text }}",
+        "batching": {}
+      }
+    },
+    {
+      "id": "9888d669-befd-5b63-9339-ca191e3d6c84",
+      "name": "Gemini",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        520,
+        520
+      ],
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      }
+    },
+    {
+      "id": "e2d1cd0d-f6c9-5466-8c7c-e0b8ea9400b2",
+      "name": "Show the blog post",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        780,
+        300
+      ],
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ $json.text }}"
+      }
+    },
+    {
+      "id": "83a622c5-4fd8-5758-86fb-59b12e1b7bea",
+      "name": "Note 5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -60
+      ],
+      "parameters": {
+        "content": "# Video → blog post\nUpload a video/podcast in the form. S.A Labs transcribes it (20 credits/min), then the AI writes a blog post.\n\n## Setup (2 minutes)\n1. Install the **S.A Labs** node: Settings → Community nodes → `n8n-nodes-salabs`.\n2. Open each **S.A Labs** node → Credential → *Create new* → paste your API key from the S.A Labs dashboard.\n3. The AI step uses **Google Gemini** (free API key from aistudio.google.com). You can swap it for OpenAI, Claude or any other chat model.\n4. Click **Test workflow**, upload a file, wait for the post.",
+        "width": 560,
+        "height": 320
+      }
+    }
+  ],
+  "connections": {
+    "Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Write blog post",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload video or audio": {
+      "main": [
+        [
+          {
+            "node": "Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe": {
+      "main": [
+        [
+          {
+            "node": "Write blog post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write blog post": {
+      "main": [
+        [
+          {
+            "node": "Show the blog post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Upload a video or audio file in a form, transcribe it with S.A Labs and get an AI-written blog post."
+  }
+}

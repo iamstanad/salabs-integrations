@@ -1,0 +1,160 @@
+{
+  "name": "S.A Labs: Podcast episode → transcript + SRT/VTT subtitles",
+  "nodes": [
+    {
+      "id": "09351243-4f5e-54bc-bbc9-ca150c6322a0",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "4f87cad9-1eb4-5b7d-95fb-3f0f8e693093",
+      "name": "Read podcast feed",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "url": "https://feeds.npr.org/510289/podcast.xml",
+        "options": {}
+      }
+    },
+    {
+      "id": "ed38e7a8-d16d-52a7-ac1b-f1fc04f160da",
+      "name": "Latest episode",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "maxItems": 1
+      }
+    },
+    {
+      "id": "3907df12-2d7e-5636-b609-ddbb9fc916a2",
+      "name": "Transcribe episode",
+      "type": "n8n-nodes-salabs.saLabs",
+      "typeVersion": 1,
+      "position": [
+        780,
+        300
+      ],
+      "parameters": {
+        "resource": "transcription",
+        "operation": "transcribe",
+        "source": "url",
+        "mediaUrl": "={{ $json.enclosure.url }}",
+        "model": "fast",
+        "transcribeOptions": {
+          "attachSubtitles": "both"
+        }
+      }
+    },
+    {
+      "id": "bafbba04-68e8-5942-bf58-033290978d61",
+      "name": "Save SRT to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1040,
+        300
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "inputDataFieldName": "srt",
+        "name": "={{ $('Latest episode').item.json.title }}.srt",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "189fc822-37d5-57a0-836a-c9ad5048ea44",
+      "name": "Note 5",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -60
+      ],
+      "parameters": {
+        "content": "# Podcast → transcript + subtitles\nReads a podcast RSS feed, transcribes the latest episode (15 credits/min with the *fast* model) and saves the SRT to Google Drive. The transcript text and VTT are in the **Transcribe episode** output too.\n\n## Setup (2 minutes)\n1. Install the **S.A Labs** node: Settings → Community nodes → `n8n-nodes-salabs`.\n2. Open each **S.A Labs** node → Credential → *Create new* → paste your API key from the S.A Labs dashboard.\n3. Put your podcast's RSS feed in **Read podcast feed**.\n4. Connect Google Drive (or replace that node with Dropbox, Notion, email…).\n\nTip: swap **Start** for a Schedule trigger to transcribe every new episode.",
+        "width": 560,
+        "height": 340
+      }
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Read podcast feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read podcast feed": {
+      "main": [
+        [
+          {
+            "node": "Latest episode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Latest episode": {
+      "main": [
+        [
+          {
+            "node": "Transcribe episode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe episode": {
+      "main": [
+        [
+          {
+            "node": "Save SRT to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Transcribe the latest podcast episode from an RSS feed and save SRT subtitles to Google Drive."
+  }
+}
