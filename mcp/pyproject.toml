@@ -9,7 +9,7 @@ authors = [{ name = "S.A Labs", email = "info@stanleyadio.com" }]
 keywords = ["mcp", "scraping", "text-to-speech", "transcription", "whisper", "ai-agents"]
 dependencies = [
     "httpx>=0.27",
-    "mcp>=1.10",
+    "mcp>=2.3,<3",
 ]
 
 [project.urls]
