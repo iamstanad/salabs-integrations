@@ -18,7 +18,8 @@
   ],
   "license": "MIT",
   "author": {
-    "name": "S.A Labs"
+    "name": "S.A Labs",
+    "email": "info@stanleyadio.com"
   },
   "main": "index.js",
   "scripts": {
