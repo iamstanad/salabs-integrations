@@ -36,9 +36,10 @@ def _data(result):
 async def test_all_tools_over_stdio(tmp_path):
     video = tmp_path / "clip.mp4"
     shutil.copy(VIDEO, video)
+    from_pypi = os.environ.get("SALABS_LIVE_FROM_PYPI")  # test the published package
     params = StdioServerParameters(
-        command=sys.executable,
-        args=["-m", "salabs_mcp.server"],
+        command="uvx" if from_pypi else sys.executable,
+        args=["--refresh", "salabs-mcp"] if from_pypi else ["-m", "salabs_mcp.server"],
         env={
             "SALABS_API_KEY": KEY,
             "SALABS_BASE_URL": BASE,
